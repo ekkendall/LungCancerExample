@@ -63,8 +63,17 @@ allData <- merge.data.frame(lungClean, fpmClean, by="State", all = T)
 
 
 #how levels of air pollution correlate to lung cancer incidence using ggplot2
-ggplot(allData, aes(x=Incidence, y=Avg_FPM)) +geom_point() +theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
+allData %>%
+  mutate(State=reorder(State, Incidence)) %>% # reorder the states by their incidence of lung cancer for the left axis
+  select(State, Incidence, Mortality, Avg_FPM) %>% # choose the variables we want to plot
+  gather('measurement', 'value', -State) %>% # use the gather function from the tidyr package to put our data into long format
+  mutate(measurement=factor(measurement, c(Avg_FPM='Avg_FPM', Mortality='Mortality', Incidence='Incidence'))) %>% # reorder the measurements manually for the legend
+  ggplot(aes(x=State, y=value, col=measurement)) + # pipe our new dataframe to ggplot and set our aesthetics
+  geom_point() + # draw a scatter graph with measurements for each state
+  coord_flip() + # rotate the graph so that States are on the X axis because 1) they fit better this way and 2) they are what we want our readers to focus on
+  labs(x='State', y='Average FPM (PM2.5); Incidence (%); Mortality (%)') + # rename our left axis title and bottom axis title
+  scale_color_discrete(name='', labels=c('Average FPM (PM2.5)', 'Mortality (%)', 'Incidence (%)')) + # rename our legend
+  ylim(0,100) # force the bottom axis to go from 0 to 100
 #Notice the warning message: removed 2 rows containing missing values. Alaska and Hawaii do not have FPM information, so ggplot had to remove these rows.
 
 #We want to know if the trend we see between air pollution and lung cancer incidence is statistically significant. We will use a simple regression model to test. We will fit the model with the lm() command, and then will graph the data, trend line, and key statistics.
